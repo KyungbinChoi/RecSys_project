@@ -7,7 +7,7 @@ import argparse
 import pandas as pd
 from typing import Optional, Tuple, List
 from pathlib import Path
-from src.utils.logging_upytils import get_logger
+from src.utils.logging_utils import get_logger
 
 logger = get_logger("recsys.data")
 
