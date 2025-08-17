@@ -1,6 +1,5 @@
 notebooks/test_notebook.ipynb
-data/MINDsmall_dev
-data/MINDsmall_train
 src/__pycache__
 src/data/__pycache__
 src/utils/__pycache__
+data/*
