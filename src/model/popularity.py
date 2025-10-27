@@ -1,7 +1,8 @@
 # 카테고리 기준 인기도 (클릭수, 사용자 수) 추천
 
 import pandas as pd
-from typing import Literal, Optional, Dict, List
+from typing import Literal
+import duckdb
 
 def build_category_popularity(
     train_df: pd.DataFrame,
@@ -75,3 +76,53 @@ def build_category_popularity(
     pop_df = pop_df.sort_values(["category", "rank", "item_id"]).reset_index(drop=True)
 
     return pop_df[["category", "item_id", "score", "rank", "subcategory", "title"]]
+
+def build_validation_pred_df(validation_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    검증 데이터 셋 기준 예측 데이터를 생성하는 함수
+    Returns
+    -------
+    pred_df : pd.DataFrame
+    """
+    df = validation_df.copy()
+    con = duckdb.connect()
+    con.register('tbl', df)
+
+    pred_df = con.execute("""
+    WITH rank_tbl AS (
+        SELECT *,
+            ROW_NUMBER() OVER (PARTITION BY impression_id ORDER BY score DESC) AS score_rank
+        FROM tbl
+    )
+    SELECT impression_id, LIST(score_rank ORDER BY position) AS pred_rank
+    FROM rank_tbl
+    GROUP BY 1
+    ORDER BY 1                      
+    """).df()
+
+    return pred_df
+
+def build_validation_pred_df(pred_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    검증 데이터 셋 기준 예측 데이터를 생성하는 함수
+    Returns
+    -------
+    pred_df : pd.DataFrame
+    """
+    df = pred_df.copy()
+    con = duckdb.connect()
+    con.register('tbl', df)
+
+    pred_label_df = con.execute("""
+    WITH rank_tbl AS (
+        SELECT *,
+            ROW_NUMBER() OVER (PARTITION BY impression_id ORDER BY score DESC) AS score_rank
+        FROM tbl
+    )
+    SELECT impression_id, LIST(score_rank ORDER BY position) AS pred_rank
+    FROM rank_tbl
+    GROUP BY 1
+    ORDER BY 1                      
+    """).df()
+
+    return pred_label_df
